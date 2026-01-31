@@ -4,7 +4,7 @@
 - Rebuild game using DOM manipulation
 - Handle click events
 - Create visual game interface
-- Integrate OpenAI API for intelligent AI opponent
+- Integrate OpenAI API or another AI API for intelligent AI opponent
 - Make API calls using fetch and async/await
 - Handle API responses and errors
 - Manage complex game state in browser
@@ -36,74 +36,17 @@ The computer opponent must use OpenAI API to make intelligent guesses. The AI sh
 4. Handle API errors gracefully (fallback to simple AI if API fails)
 5. Show loading state while waiting for AI response
 
-**Implementation Guide:**
+**Implementation Guide (continued):**
 
 ```javascript
-// HTML structure
-<div id="game-container">
-    <div id="player-grid"></div>
-    <div id="computer-grid"></div>
-    <div id="game-info">
-        <div id="ai-loading" style="display: none;">AI is thinking...</div>
-    </div>
-</div>
-
-// JavaScript structure
-class BattleshipGame {
-    constructor() {
-        this.playerGrid = createGrid(10, 10);
-        this.computerGrid = createGrid(10, 10);
-        this.playerShips = [];
-        this.computerShips = [];
-        this.gameState = 'placing'; // 'placing', 'playing', 'gameOver'
-        this.computerGuesses = [];
-        this.computerHits = [];
-    }
-    
-    renderGrids() {
-        // Create DOM elements for grids
-        // Add click handlers
-        // Update visual state
-    }
-    
-    handlePlayerGuess(row, col) {
-        // Check hit/miss
-        // Update grid
-        // Check for sunk ships
-        // Computer's turn (calls AI)
-    }
-    
-    async computerGuess() {
-        // Show loading state
-        document.querySelector('#ai-loading').style.display = 'block';
-        
-        try {
-            // Get AI suggestion from OpenAI
-            const guess = await this.getAIGuess();
-            this.makeComputerGuess(guess.row, guess.col);
-        } catch (error) {
-            console.error('AI API failed:', error);
-            // Fallback to simple AI
-            const guess = this.simpleAIGuess();
-            this.makeComputerGuess(guess.row, guess.col);
-        } finally {
-            document.querySelector('#ai-loading').style.display = 'none';
-        }
-    }
-    
     async getAIGuess() {
-        // Prepare game state for AI
         const gameState = {
             grid: this.computerGrid,
             guesses: this.computerGuesses,
             hits: this.computerHits,
             sunkShips: this.getSunkShips()
         };
-        
-        // Create prompt for OpenAI
         const prompt = this.createAIPrompt(gameState);
-        
-        // Call OpenAI API
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -113,52 +56,23 @@ class BattleshipGame {
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
                 messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a Battleship game AI. Respond with only coordinates in format "A5" or "row,col" (0-9).'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
+                    { role: 'system', content: 'You are a Battleship game AI. Respond with only coordinates in format "A5" or "row,col" (0-9).' },
+                    { role: 'user', content: prompt }
                 ],
                 max_tokens: 10,
                 temperature: 0.7
             })
         });
-        
-        if (!response.ok) {
-            throw new Error('OpenAI API request failed');
-        }
-        
+        if (!response.ok) throw new Error('OpenAI API request failed');
         const data = await response.json();
         const aiResponse = data.choices[0].message.content.trim();
-        
-        // Parse AI response to get coordinates
         return this.parseAICoordinates(aiResponse);
     }
-    
     createAIPrompt(gameState) {
-        return `You are playing Battleship. Here's the current state:
-        
-Grid size: 10x10
-Your previous guesses: ${gameState.guesses.map(g => `${g.row},${g.col}`).join('; ')}
-Your hits: ${gameState.hits.map(h => `${h.row},${h.col}`).join('; ')}
-Sunk ships: ${gameState.sunkShips.length}
-
-Make your next strategic guess. Respond with coordinates only (e.g., "A5" or "3,7").`;
+        return `You are playing Battleship. Grid 10x10. Guesses: ${gameState.guesses.map(g => `${g.row},${g.col}`).join('; ')}. Hits: ${gameState.hits.map(h => `${h.row},${h.col}`).join('; ')}. Sunk: ${gameState.sunkShips.length}. Respond with coordinates only (e.g. "A5" or "3,7").`;
     }
-    
-    parseAICoordinates(response) {
-        // Parse "A5" or "3,7" format to row, col
-        // Handle various formats AI might return
-        // Return { row: number, col: number }
-    }
-    
-    simpleAIGuess() {
-        // Fallback: simple random or hunt/target AI
-        // Use this if OpenAI API fails
-    }
+    parseAICoordinates(response) { /* Parse "A5" or "3,7" to row, col */ }
+    simpleAIGuess() { /* Fallback: random or hunt/target AI if API fails */ }
 }
 ```
 
